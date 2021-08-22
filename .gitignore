@@ -19,7 +19,7 @@ coverage
 .nyc_output
 
 
-# Compiled binary addons (https://nodejs.org/api/addons.html) ddd
+# Compiled binary addons (https://nodejs.org/api/addons.html) ddds
 build/Release
 
 # Dependency directories
