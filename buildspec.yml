@@ -1,0 +1,24 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 14
+    commands:
+      - npm i jsonlint -g
+      - npm -v
+  pre_build:
+    commands:
+      - npm --version
+      - npm install npm -g
+  build:
+    commands:
+      - npm i
+      - npm run cdk
+      - echo "Packaging Cloudformation Templates"
+      - aws cloudformation package --template-file cloudformation.json --s3-bucket bucket-name --output-template-file packaged-template.json
+  post_build:
+    commands:
+artifacts:
+  files:
+    - packaged-template.json
