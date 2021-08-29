@@ -9,5 +9,5 @@ Resources:
     Type: AWS::ApiGatewayV2::Api
     Properties:
       Name:
-        Fn::Sub: ${SystemName}-${LayerName}-${GroupName}-Http-api
+        Fn::Sub: ${SystemName}-Http-api
       ProtocolType: HTTP
