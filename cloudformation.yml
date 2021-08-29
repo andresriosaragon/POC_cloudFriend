@@ -13,7 +13,7 @@ Resources:
   myFunction:
     Type: AWS::Lambda::Function
     Properties:
-      Code: build/myFunction
+      Code: packages/createEntitlement
       Description:
         Fn::Sub: myFunction in the ${AWS::StackName} stack
       FunctionName:

@@ -5,7 +5,7 @@ import { makeLambda } from "./lambda";
 import { makeHTTPApi, makeRoute, makeIntegration } from "./api";
 
 // const merged = cf.merge(queue); dsads
-const lambda = makeLambda("myFunction", "build/myFunction");
+const lambda = makeLambda("myFunction", "packages/createEntitlement");
 const httpApi = makeHTTPApi("myApi");
 const Myendpoint = makeRoute("myApi");
 const Myintegration = makeIntegration("myApi", "myFunction");
