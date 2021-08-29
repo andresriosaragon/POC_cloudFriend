@@ -147,7 +147,7 @@ Resources:
   UpdateEntitlementFunction:
     Type: AWS::Lambda::Function
     Properties:
-      Code: dist/update-entitlement
+      Code: dist/create-entitlement
       Handler: index.handler
       FunctionName: !Sub ${SystemName}-${LayerName}-${GroupName}-UpdateEntitlement-Fn
       Role: !GetAtt LambdaRole.Arn
