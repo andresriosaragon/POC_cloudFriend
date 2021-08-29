@@ -12,7 +12,7 @@ phases:
       - npm --version
       - npm install npm -g
       - npm i
-      - npm build
+      - npm run build
   build:
     commands:
       - echo "Packaging Cloudformation Templates"
