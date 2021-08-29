@@ -8,6 +8,17 @@ Resources:
   MyApi:
     Type: AWS::ApiGatewayV2::Api
     Properties:
-      Name:
-        Fn::Sub: ${SystemName}-Http-api
+      Name: system-myApi
       ProtocolType: HTTP
+  Myendpoint:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId:
+        Fn::Ref: myApi
+      ProtocolType: HTTP
+      RouteKey: GET /entitlement
+      Target:
+        Fn::Join:
+          - /
+          - - integrations
+            - Fn::Ref: GetEntitlementIntegration

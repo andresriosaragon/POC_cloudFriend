@@ -1,11 +1,13 @@
 import { writeFileSync } from "fs";
-import { makeLambda } from "./lambda";
-import { makeHTTPApi } from "./api";
 import { stringify } from "yaml";
+
+import { makeLambda } from "./lambda";
+import { makeHTTPApi, makeRoute } from "./api";
 
 // const merged = cf.merge(queue); dsads
 const lambda = makeLambda("myFunction", "build/myFunction");
-const httpApi = makeHTTPApi();
+const httpApi = makeHTTPApi("myApi");
+const Myendpoint = makeRoute("myApi");
 const api = stringify(httpApi);
 /*
 AWSTemplateFormatVersion: "2010-09-09"
@@ -33,6 +35,7 @@ const data = {
   },
   Resources: {
     MyApi: httpApi,
+    Myendpoint,
   },
 };
 const data2 = stringify(data);
