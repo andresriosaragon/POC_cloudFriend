@@ -13,7 +13,7 @@ Resources:
   myFunction:
     Type: AWS::Lambda::Function
     Properties:
-      Code: dist/create-entitlement
+      Code: /dist/create-entitlement
       Handler: index.handler
       Description:
         Fn::Sub: myFunction in the ${AWS::StackName} stack
