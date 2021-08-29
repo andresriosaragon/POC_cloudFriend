@@ -57,10 +57,7 @@ const makeRoute = (apiName) => {
       ApiId: { Ref: apiName },
       RouteKey: "GET /entitlement",
       Target: {
-        "Fn::Join": [
-          "/",
-          ["integrations", { Ref: "GetEntitlementIntegration" }],
-        ],
+        "Fn::Join": ["/", ["integrations", { Ref: "Myintegration" }]],
       },
     },
   };
