@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Resources for user entitlement service
+Parameters:
+  SystemName:
+    Type: String
+    Default: system
+Resources:
+  MyApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: system-myApi
+      ProtocolType: HTTP
+  myFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: deploybucketandresrios
+        S3Key: 02c60b0ff7a289039ae23312649d3f96
+      Handler: index.handler
+      Description:
+        Fn::Sub: myFunction in the ${AWS::StackName} stack
+      FunctionName:
+        Fn::Sub: ${AWS::StackName}-myFunction
+      MemorySize: 128
+      Runtime: nodejs14.x
+      Timeout: 300
+      Role:
+        Fn::GetAtt:
+        - myFunctionRole
+        - Arn
+  myFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Action: sts:AssumeRole
+          Principal:
+            Service:
+              Fn::Sub: lambda.amazonaws.com
+  Myendpoint:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId:
+        Ref: myApi
+      ProtocolType: HTTP
+      RouteKey: GET /entitlement
+      Target:
+        Fn::Join:
+        - /
+        - - integrations
+          - Ref: GetEntitlementIntegration
+  Myintegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId:
+        Ref: myApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri:
+        Fn::GetAtt:
+        - myFunction
+        - Arn
+      PayloadFormatVersion: 2
