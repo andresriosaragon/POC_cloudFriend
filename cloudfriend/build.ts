@@ -5,7 +5,7 @@ import { makeLambda } from "./lambda";
 import { makeHTTPApi, makeRoute, makeIntegration } from "./api";
 
 // const merged = cf.merge(queue); dsads
-const lambda = makeLambda("myFunction", "dist/create-entitlement");
+const lambda = makeLambda("myFunction", "dist");
 const httpApi = makeHTTPApi("myApi");
 const Myendpoint = makeRoute("myApi");
 const Myintegration = makeIntegration("myApi", "myFunction");
@@ -35,7 +35,7 @@ const data = {
     },
   },
   Resources: {
-    MyApi: httpApi,
+    myApi: httpApi,
     myFunction: lambda.function,
     myFunctionRole: lambda.role,
     Myendpoint,
