@@ -47,7 +47,7 @@ Resources:
         Fn::Join:
           - /
           - - integrations
-            - Ref: GetEntitlementIntegration
+            - Ref: Myintegration
   Myintegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
