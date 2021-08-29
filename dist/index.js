@@ -1,5 +1,5 @@
 const handler = async (event) => {
-  console.log("craaeste = ", JSON.stringify(event));
+  console.log("crasaeste = ", JSON.stringify(event));
 };
 
 module.exports = { handler };
