@@ -13,9 +13,7 @@ Resources:
   myFunction:
     Type: AWS::Lambda::Function
     Properties:
-      Code:
-        S3Bucket: deploybucketandresrios
-        S3Key: 02c60b0ff7a289039ae23312649d3f96
+      CodeUri: dist/create-entitlement
       Handler: index.handler
       Description:
         Fn::Sub: myFunction in the ${AWS::StackName} stack
@@ -28,6 +26,9 @@ Resources:
         Fn::GetAtt:
         - myFunctionRole
         - Arn
+      Code:
+        S3Bucket: deploybucketandresrios
+        S3Key: d0f9ff7e36afed0eb2951443ad68d784
   myFunctionRole:
     Type: AWS::IAM::Role
     Properties:
