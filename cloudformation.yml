@@ -41,7 +41,6 @@ Resources:
     Properties:
       ApiId:
         Ref: myApi
-      ProtocolType: HTTP
       RouteKey: GET /entitlement
       Target:
         Fn::Join:
