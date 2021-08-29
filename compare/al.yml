@@ -1,0 +1,335 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Resources for user entitlement service
+
+Parameters:
+  SystemName:
+    Description: System Name
+    Type: String
+  LayerName:
+    Description: Name of the Layer
+    Type: String
+  GroupName:
+    Description: Service name
+    Type: String
+  Environment:
+    Type: String
+    AllowedValues:
+      - prod
+      - test
+      - dev
+      - uat
+  VimeoUrl:
+    Type: String
+  VimeoProductId:
+    Type: String
+  VimeoApiKey:
+    Type: String
+    Default: "{{resolve:ssm:UserEntitlementService-vimeoApiKey}}"
+  CdsTableName:
+    Type: String
+    Default: "{{resolve:ssm:cdsDdbTableUsers}}"
+
+Conditions:
+  isProd: !Equals
+    - !Ref Environment
+    - "prod"
+
+Resources:
+  SnsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${SystemName}-${LayerName}-${GroupName}-Sns-Role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: !Sub ${SystemName}-${LayerName}-${GroupName}-Sns-Policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - "arn:aws:logs:*:*:*"
+              - Effect: Allow
+                Action:
+                  - sqs:*
+                Resource: "*"
+
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${SystemName}-${LayerName}-${GroupName}-Lambda-Role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: !Sub ${SystemName}-${LayerName}-${GroupName}-Lambda-Policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - "arn:aws:logs:*:*:*"
+              - Effect: Allow
+                Action:
+                  - sqs:*
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - dynamodb:*
+                Resource:
+                  - !GetAtt UserEntitlementDdbTable.Arn
+                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${CdsTableName}
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                  - kms:Decrypt
+                Resource: "*"
+
+  APIInvokeLambdaPermissionGet:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref GetEntitlementFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${UserEntitlementApi}/*/*/entitlement
+
+  APIInvokeLambdaPermissionPost:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref UpdateEntitlementFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${UserEntitlementApi}/*/*/entitlement
+
+  ## lambda
+  GetEntitlementFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code: dist/get-entitlement
+      Handler: index.handler
+      FunctionName: !Sub ${SystemName}-${LayerName}-${GroupName}-GetEntitlement-Fn
+      Role: !GetAtt LambdaRole.Arn
+      Runtime: nodejs14.x
+      MemorySize: 128
+      Timeout: 180
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref UserEntitlementDdbTable
+          CDS_TABLE_NAME: !Sub ${CdsTableName}
+          VIMEO_URL: !Sub ${VimeoUrl}
+          VIMEO_API_KEY: !Sub ${VimeoApiKey}
+          VIMEO_PRODUCT_ID: !Sub ${VimeoProductId}
+          LOG_LEVEL: production
+
+  UpdateEntitlementFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code: dist/update-entitlement
+      Handler: index.handler
+      FunctionName: !Sub ${SystemName}-${LayerName}-${GroupName}-UpdateEntitlement-Fn
+      Role: !GetAtt LambdaRole.Arn
+      Runtime: nodejs14.x
+      MemorySize: 128
+      Timeout: 180
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref UserEntitlementDdbTable
+          LOG_LEVEL: production
+          CDS_TABLE_NAME: !Sub ${CdsTableName}
+          VIMEO_URL: !Sub ${VimeoUrl}
+          VIMEO_API_KEY: !Sub ${VimeoApiKey}
+          VIMEO_PRODUCT_ID: !Sub ${VimeoProductId}
+
+  SqsUpdateEntitlementFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code: dist/sqs-update-entitlement
+      Handler: index.handler
+      FunctionName: !Sub ${SystemName}-${LayerName}-${GroupName}-SqsUpdateEntitlement-Fn
+      Role: !GetAtt LambdaRole.Arn
+      Runtime: nodejs14.x
+      MemorySize: 128
+      Timeout: 180
+      DeadLetterConfig:
+        TargetArn: !GetAtt DeadLetterQueue.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref UserEntitlementDdbTable
+          LOG_LEVEL: production
+          CDS_TABLE_NAME: !Sub ${CdsTableName}
+          VIMEO_URL: !Sub ${VimeoUrl}
+          VIMEO_API_KEY: !Sub ${VimeoApiKey}
+          VIMEO_PRODUCT_ID: !Sub ${VimeoProductId}
+
+  SqsUpdateEntitlementEventMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      EventSourceArn: !GetAtt UpdateEntitlementQueue.Arn
+      FunctionName: !GetAtt SqsUpdateEntitlementFunction.Arn
+
+  UpdateEntitlementQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      PolicyDocument:
+        Id: UpdateEntitlementQueuePolicy
+        Version: "2012-10-17"
+        Statement:
+          - Sid: Allow-User-SendMessage
+            Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action:
+              - sqs:SendMessage
+            Resource: "*"
+      Queues:
+        - !Ref UpdateEntitlementQueue
+
+  UpdateEntitlementQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${SystemName}-${LayerName}-${GroupName}-Queue
+      VisibilityTimeout: 180
+      RedrivePolicy:
+        deadLetterTargetArn:
+          Fn::GetAtt:
+            - "DeadLetterQueue"
+            - "Arn"
+        maxReceiveCount: 5
+
+  DeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${SystemName}-${LayerName}-${GroupName}-DLQ
+
+  UpdateEntitlementSns:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: LMOD-DomainEvents-UserEntitlements-Topic
+
+  # Subscribe SQS Queue to SNS Topic
+  SQSQueueSubscriptionToSNS:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: sqs
+      Endpoint: !GetAtt UpdateEntitlementQueue.Arn
+      TopicArn: !Ref UpdateEntitlementSns
+
+  ## API
+  UserEntitlementApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub ${SystemName}-${LayerName}-${GroupName}-Http-api
+      Description: User entitlement http api front
+      ProtocolType: HTTP
+
+  GetEntitlementRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref UserEntitlementApi
+      RouteKey: "GET /entitlement"
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref GetEntitlementIntegration
+
+  GetEntitlementIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref UserEntitlementApi
+      Description: HTTP proxy integration for get entitlement lambda
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt GetEntitlementFunction.Arn
+      PayloadFormatVersion: 2.0
+      ResponseParameters:
+        "200":
+          ResponseParameters:
+            - Source: "$response.body.httpStatus"
+              Destination: "overwrite:statuscode"
+
+  PostEntitlementRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref UserEntitlementApi
+      RouteKey: "POST /entitlement"
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref PostEntitlementIntegration
+
+  PostEntitlementIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref UserEntitlementApi
+      Description: HTTP proxy integration for post entitlement lambda
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt UpdateEntitlementFunction.Arn
+      PayloadFormatVersion: 2.0
+
+  Stage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref UserEntitlementApi
+      AutoDeploy: true
+      StageName: !Ref Environment
+      AccessLogSettings:
+        DestinationArn: !GetAtt ApiLogGroup.Arn
+        Format: >-
+          {$context.identity.sourceIp - - [$context.requestTime] "$context.httpMethod $context.routeKey $context.protocol" $context.status $context.responseLength $context.requestId $context.integrationErrorMessage}
+
+  ApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join
+        - "-"
+        - - !Ref UserEntitlementApi
+          - access-logs
+
+  UserEntitlementDdbTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: !Sub ${SystemName}-${LayerName}-${GroupName}-UserEntitlement
+      AttributeDefinitions:
+        - AttributeName: "PK"
+          AttributeType: "S"
+        - AttributeName: "SK"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "PK"
+          KeyType: "HASH"
+        - AttributeName: "SK"
+          KeyType: "RANGE"
+      BillingMode: "PAY_PER_REQUEST"
+      GlobalSecondaryIndexes:
+        - IndexName: "SK-PK"
+          KeySchema:
+            - AttributeName: "SK"
+              KeyType: "HASH"
+            - AttributeName: "PK"
+              KeyType: "RANGE"
+          Projection:
+            ProjectionType: "ALL"
+      # PointInTimeRecoverySpecification:
+      #   PointInTimeRecoveryEnabled: !If [isProd, true, false]

@@ -1,0 +1,27 @@
+Parameters:
+  SystemName:
+    Description: System Name
+    Type: String
+  LayerName:
+    Description: Name of the Layer
+    Type: String
+  GroupName:
+    Description: Service name
+    Type: String
+  Environment:
+    Type: String
+    AllowedValues:
+      - prod
+      - test
+      - dev
+      - uat
+  VimeoUrl:
+    Type: String
+  VimeoProductId:
+    Type: String
+  VimeoApiKey:
+    Type: String
+    Default: "{{resolve:ssm:UserEntitlementService-vimeoApiKey}}"
+  CdsTableName:
+    Type: String
+    Default: "{{resolve:ssm:cdsDdbTableUsers}}"
