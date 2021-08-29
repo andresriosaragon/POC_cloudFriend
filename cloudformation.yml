@@ -22,3 +22,14 @@ Resources:
           - /
           - - integrations
             - Ref: GetEntitlementIntegration
+  Myintegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId:
+        Ref: myApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri:
+        Fn::GetAtt:
+          - myFunction
+          - Arn
+      PayloadFormatVersion: 2
