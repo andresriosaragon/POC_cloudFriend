@@ -36,7 +36,8 @@ const data = {
   },
   Resources: {
     MyApi: httpApi,
-    myFunction: lambda,
+    myFunction: lambda.function,
+    myFunctionRole: lambda.role,
     Myendpoint,
     Myintegration,
   },
