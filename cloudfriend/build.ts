@@ -12,7 +12,7 @@ const Myintegration = makeIntegration("myApi", "myFunction");
 const api = stringify(httpApi);
 /*
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Resources for user entitlement service
+Description: Resourcesasd for user entitlement service
 
 Parameters:
   SystemName:
