@@ -3,7 +3,7 @@ import { makeLambda } from "./lambda";
 import { makeHTTPApi } from "./api";
 import { stringify } from "yaml";
 
-// const merged = cf.merge(queue); dsad
+// const merged = cf.merge(queue); dsads
 const lambda = makeLambda("myFunction", "build/myFunction");
 const httpApi = makeHTTPApi();
 const data = stringify(httpApi);
