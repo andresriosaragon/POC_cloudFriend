@@ -24,13 +24,13 @@ const makeRoute = (apiName) => {
   return {
     Type: "AWS::ApiGatewayV2::Route",
     Properties: {
-      ApiId: { "Fn::Ref": apiName },
+      ApiId: { Ref: apiName },
       ProtocolType: "HTTP",
       RouteKey: "GET /entitlement",
       Target: {
         "Fn::Join": [
           "/",
-          ["integrations", { "Fn::Ref": "GetEntitlementIntegration" }],
+          ["integrations", { Ref: "GetEntitlementIntegration" }],
         ],
       },
     },

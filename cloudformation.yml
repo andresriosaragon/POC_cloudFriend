@@ -14,11 +14,11 @@ Resources:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId:
-        Fn::Ref: myApi
+        Ref: myApi
       ProtocolType: HTTP
       RouteKey: GET /entitlement
       Target:
         Fn::Join:
           - /
           - - integrations
-            - Fn::Ref: GetEntitlementIntegration
+            - Ref: GetEntitlementIntegration
