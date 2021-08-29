@@ -1,5 +1,13 @@
-Type: AWS::ApiGatewayV2::Api
-Properties:
-  Name:
-    Fn::Sub: ${SystemName}-${LayerName}-${GroupName}-Http-api
-  ProtocolType: HTTP
+AWSTemplateFormatVersion: 2010-09-09
+Description: Resources for user entitlement service
+Parameters:
+  SystemName:
+    Type: String
+    Default: system
+Resources:
+  MyApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name:
+        Fn::Sub: ${SystemName}-${LayerName}-${GroupName}-Http-api
+      ProtocolType: HTTP
