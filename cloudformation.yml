@@ -58,4 +58,4 @@ Resources:
         Fn::GetAtt:
           - myFunction
           - Arn
-      PayloadFormatVersion: 2
+      PayloadFormatVersion: 2.0

@@ -45,7 +45,7 @@ const makeIntegration = (apiname, functionName) => {
       IntegrationUri: {
         "Fn::GetAtt": [functionName, "Arn"],
       },
-      PayloadFormatVersion: 2.0,
+      PayloadFormatVersion: "2.0",
     },
   };
 };
