@@ -55,7 +55,6 @@ const makeRoute = (apiName) => {
     Type: "AWS::ApiGatewayV2::Route",
     Properties: {
       ApiId: { Ref: apiName },
-      ProtocolType: "HTTP",
       RouteKey: "GET /entitlement",
       Target: {
         "Fn::Join": [
